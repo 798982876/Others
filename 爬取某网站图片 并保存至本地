@@ -1,0 +1,48 @@
+import re
+import urllib3
+
+
+
+def getImg():
+
+    for i in range(200,400):
+        imageURL  = 'https://www.cnbksy.com/literature/periodImage/29e9a981161f7b96484654693d2922be/5fab7f9ff74f7f4be7341aa4/'+str(i)+'/0'+str(i)+'.jpg'
+        print(imageURL)
+    
+    # imageURL = 'https://www.cnbksy.com/literature/periodImage/29e9a981161f7b96484654693d2922be/5fab99e423b09910ae3b5524/4/0003.jpg'
+        saveImage(imageURL ,'pic/',i)
+
+def saveImage(imageURL,filePath,picnum):
+    
+    http = urllib3.PoolManager()
+
+  
+    print(imageURL)
+    splitPath = imageURL.split('.')
+    fileExt = splitPath.pop()
+    fileName = filePath + "/" + str(picnum) + "." + fileExt #name是存储图片的路径，number作为图片名
+    #header 作为登录要素
+    header= {"accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+"accept-encoding": "gzip, deflate, br",
+"accept-language": "zh-CN,zh;q=0.9",
+"cache-control": "no-cache",
+"cookie": "XSRF-TOKEN=b4b6e95f-8f55-4bd7-95be-ff55babf2f21; cookie_current_cart=; IgnoreIp=false; __session:sessionID:=https:; SESSION=f1fedad8-9319-4ed8-ba4d-7256b8901df4; ClientActiveTime=1605081436097",
+"pragma": "no-cache",
+"referer": "https://www.cnbksy.com/literature/browseEntity/29e9a981161f7b96484654693d2922be?bc=&pid=386cf44764ed6492a6c1371a0e5e4f7d&activeId=5fab805384b84935fa4895a0&source=GENERALSEARCH",
+"sec-fetch-dest": "image",
+"sec-fetch-mode": "no-cors",
+"sec-fetch-site": "same-origin",
+"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36"}
+
+    # 下载单个imageURL的图片
+    r = http.request('GET', imageURL,headers=header)
+    data = r.data
+    f = open(fileName, 'wb+')
+    f.write(data)
+    print(u'正在保存的一张图片为:%s', fileName)
+    f.close()
+   
+
+if __name__=='__main__':
+
+    getImg()
