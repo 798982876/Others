@@ -1,9 +1,17 @@
+import sys
+import os
+import glob
 import re
 import urllib3
 from xml.dom.minidom import parse
 import xml.dom.minidom
 
+
+    
+
 def parsexml(xmlfile):
+
+
     DOMTree = xml.dom.minidom.parse(xmlfile)
     Dom = DOMTree.documentElement
 
@@ -11,7 +19,17 @@ def parsexml(xmlfile):
     return URIs
 
 
-def getImg(xmlfile):
+def getImg(xmlfile,file_path1,file_path2,file_path3):
+    #create filepath
+    big_path = 'pic\\big\\'+file_path1+'\\'+file_path2+'\\'+file_path3+'\\'
+    small_path =  'pic\\small\\'+file_path1+'\\'+file_path2+'\\'+file_path3+'\\'
+    folder1 = os.path.exists(big_path)
+    folder2 = os.path.exists(small_path)
+    if not folder1:
+        os.makedirs(big_path)
+    if not folder2:
+        os.makedirs(small_path)
+
     URIs = parsexml(xmlfile)
 
     for URI in URIs:
@@ -25,17 +43,16 @@ def getImg(xmlfile):
         size = int(b[3].split("=")[1])
         #设置大文件>100kb
         if size > 102400:
-            file_path = 'pic/big/'
+            file_path = big_path
             saveImage(imageURL,file_path, pic_name)
         else:
-            file_path = 'pic/small/'
+            file_path = small_path
             saveImage(imageURL,file_path, pic_name)
 
 
 def saveImage(imageURL,filePath,pic_name):
     
     http = urllib3.PoolManager()
-    #获取不到图片(1kb),要更新cookie
     header={"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Encoding":"gzip, deflate, sdch",
         "Accept-Language":"zh-CN,zh;q=0.8",
@@ -67,8 +84,30 @@ def saveImage(imageURL,filePath,pic_name):
     f.write(data)
     print(u'正在保存的一张图片为:%s', pic_name+'.jpg')
     f.close()
+
+def processxml(filepath):
+    
+    if (os.path.exists(filepath)):
+        #得到该文件夹路径下下的所有xml文件路径
+        f = glob.glob(filepath + '\\*.xml' ) 
+    else:
+        print('no path')
+    
+    file_path1 = filepath.split('\\')[-1]
+    
+    for file in f:
+        print(file)
+       
+        filename = file.split('\\')[-1]
+        file_path2 = filename.split('_')[0]
+        file_path3 = filename.split('.')[0]
+        getImg(file,file_path1,file_path2,file_path3)
+    
+
+    
+
    
 
 if __name__=='__main__':
 
-    getImg('xml/D1_1205.xml')
+    processxml('xml\\1211_1220')
