@@ -1,0 +1,77 @@
+import requests
+import json
+import time
+import datetime 
+from pandas import DataFrame
+import psycopg2
+
+
+# def getHefengNowWeather_XY(key,location):
+#     insert_list = []
+#     NowWeatherUrl = 'https://devapi.qweather.com/v7/weather/now?location='+location+'&key='+key
+#     requests.adapters.DEFAULT_RETRIES = 5
+#     res = requests.get(url=NowWeatherUrl).content
+#     total_json = json.loads(res)
+
+def getHefengNowWeather_ID(key,locationid):
+    NowWeatherUrl = 'https://devapi.qweather.com/v7/weather/now?location='+locationid+'&key='+key
+    requests.adapters.DEFAULT_RETRIES = 5
+    res = requests.get(url=NowWeatherUrl).content
+    total_json = json.loads(res)
+    return total_json
+
+def getHefengNowWeather_City(key,cityname):
+    #获得location_id
+    insert_list=[]
+    CityUrl = 'https://geoapi.qweather.com/v2/city/lookup?location='+cityname+'&key='+key
+    requests.adapters.DEFAULT_RETRIES = 5
+    res = requests.get(url=CityUrl).content
+    
+    total_json = json.loads(res)
+    for loc in total_json['location']:
+        dis_name = loc['name']
+        dis_id = loc['id']
+        weatherinfo = getHefengNowWeather_ID(key,dis_id)['now']
+        # print(weatherinfo)
+        obsDate = weatherinfo['obsTime'].split('T')[0]
+        obsTime = weatherinfo['obsTime'].replace('T',' ')
+        temp = weatherinfo['temp']
+        feelsLike = weatherinfo['feelsLike']
+        text = weatherinfo['text']
+        wind360 = weatherinfo['wind360']
+        windDir = weatherinfo['windDir']
+        windScale = weatherinfo['windScale']
+        windSpeed = weatherinfo['windSpeed']
+        humidity = weatherinfo['humidity']
+        precip = weatherinfo['precip']
+        pressure = weatherinfo['pressure']
+        vis = weatherinfo['vis']
+        cloud = weatherinfo['cloud']
+        dew = weatherinfo['dew']
+        info = [obsTime,temp,feelsLike,text,wind360,windDir,windScale,windSpeed,humidity,precip,pressure,vis,cloud,dew,dis_name,obsDate]
+
+        insert_list.append(tuple(info))
+    conn = psycopg2.connect(database="jtkk", user="jtkk", password="726322", host="132.1.11.157", port="5432")
+    cur = conn.cursor()
+
+    for i in insert_list:
+        if len(i):
+            cur.execute(
+                "insert into weather.nowweather_nanjing  values "+str(i)
+            )
+        conn.commit()
+    conn.close()
+    
+
+
+#兴卫 
+# getHefengNowWeather_XY("c24afa8c4a6e4e3d80018c6a4145d05b","118.84,32.10")
+#南京
+while True: 
+    if datetime.datetime.now().minute % 20 == 0: 
+        #创建请求时间，确保一次请求的时间都相同
+        currentTime = time.strftime("%H:%M:%S", time.localtime())  # 设置请求时间
+        print(time.localtime())
+        getHefengNowWeather_City("c24afa8c4a6e4e3d80018c6a4145d05b","南京")
+
+
