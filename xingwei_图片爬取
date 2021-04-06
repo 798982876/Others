@@ -1,0 +1,137 @@
+import sys
+import os
+import glob
+import re
+import urllib3
+from xml.dom.minidom import parse
+import xml.dom.minidom
+
+
+    
+
+def parsexml(xmlfile):
+
+
+    DOMTree = xml.dom.minidom.parse(xmlfile)
+    Dom = DOMTree.documentElement
+
+    URIs = Dom.getElementsByTagName("playbackURI")
+    Times = Dom.getElementsByTagName("startTime")
+    return URIs,Times
+
+
+def getImg(xmlfile,filepath2):
+    # create filepath
+    big_path = '/'+filepath2+'/big/'
+    small_path =  '/'+filepath2+'/small/'
+    # folder1 = os.path.exists(big_path)
+    # folder2 = os.path.exists(small_path)
+    # if not folder1:
+    #     os.makedirs(big_path)
+    # if not folder2:
+    #     os.makedirs(small_path)
+
+    URIs,Times = parsexml(xmlfile)
+    print('xmlfile',xmlfile)
+    print('len time',len(Times))
+
+    for i in range(len(URIs)):
+        
+        imageURL = URIs[i].childNodes[0].data
+        imageTime = Times[i].childNodes[0].data
+       
+       
+        #字符串分割
+        a = imageURL.split("?")
+        # pic_name = a[1]
+        b = a[1].split("&")
+        pic_name = b[2].split('=')[1]
+        pic_time = imageTime
+        size = int(b[3].split("=")[1])
+        #设置大文件>100kb
+        if size > 102400:
+            file_path = big_path
+            saveImage(imageURL,file_path, pic_name,pic_time)
+        else:
+            file_path = small_path
+            saveImage(imageURL,file_path, pic_name,pic_time)
+
+
+def saveImage(imageURL,filePath,pic_name,pic_time):
+    
+    http = urllib3.PoolManager()
+    header={"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Encoding":"gzip, deflate, sdch",
+        "Accept-Language":"zh-CN,zh;q=0.8",
+        "Cache-Control":"max-age=0",
+        "Connection":"keep-alive",
+        "Content-Length":"0",
+        "Cookie":"language=zh; WebSession_49c055a613=f65b67a21df914bd017555443ee248eb70f16f9107012e44399d01708f1d902f",
+        "If-Modified-Since":"0",
+        "Origin":"http://170.2.229.50",
+        # Referer:http://170.2.229.50/doc/page/preview.asp
+        "User-Agent":"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0",
+        "X-Requested-With":"XMLHttpRequest"}
+
+#         Accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+# Accept-Encoding:gzip, deflate, sdch
+# Accept-Language:zh-CN,zh;q=0.8
+# Cache-Control:max-age=0
+# Connection:keep-alive
+# Cookie:language=zh; WebSession_49c055a613=b3f6e8b156493788363a5ee27e6cf836fc5dc730f3d3f562eb22548f699c7bfb
+# Host:170.2.229.50
+# Upgrade-Insecure-Requests:1
+# User-Agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 SE 2.X MetaSr 1.0
+
+    # 下载单个imageURL的图片
+    r = http.request('GET', imageURL,headers=header)
+
+    data = r.data
+
+    #创建日文件夹
+    folder_day = pic_time.split('T')[0]
+    # folder_day = folder_day.split('-')
+    # folder_day = '_'.join(folder_day)
+    pic_time = pic_time.replace(':','_')
+
+    folder_path = 'pic/'+folder_day+filePath
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        print('begin to make folder:',folder_path)
+    f = open(folder_path+pic_name+'_'+pic_time+'.jpg', 'wb+')
+    f.write(data)
+    f.close()
+
+def processxml(filepath):
+    
+    if (os.path.exists(filepath)):
+        #得到该文件夹路径下下的所有xml文件路径
+        f = glob.glob(filepath + '\\*.xml' ) 
+    else:
+        print('no path')
+    
+    # file_path1 = filepath.split('\\')[-1]
+    
+    for file in f:
+       
+       
+        filename = file.split('\\')[-1]
+        file_path2 = filename.split('_')[0]
+        #防终止,提前删除最新生成的文件夹
+        # exi_path = 'pic\\big\\'+file_path1+'\\'
+        # exi = os.listdir(exi_path) 
+        # if file_path2 in exi:
+        #     continue
+        # file_path3 = filename.split('.')[0]
+        getImg(file,file_path2)
+    
+
+    
+
+   
+
+if __name__=='__main__':
+
+    processxml('xml\\20210323_20210331')
+    #processxml('xml\\other')
+    
